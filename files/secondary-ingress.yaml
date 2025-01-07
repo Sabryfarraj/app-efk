@@ -4,9 +4,6 @@ kind: Ingress
 metadata:
   name: secondary-service-ingress
   namespace: app
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   rules:
     - host: backend.log

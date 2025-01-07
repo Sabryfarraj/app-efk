@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: main-logger
-          image: samiyounis01/mainloggerservice:v1.1
+          image: samiyounis01/mainloggerservice:v1.3
           ports:
             - containerPort: 8022
           volumeMounts:
@@ -25,8 +25,6 @@ spec:
           env:
             - name: SPRING_CONFIG_LOCATION
               value: file:/config/application.yaml
-            - name: SECONDARY_SERVICE_HOST
-              value: http://secondary-service
       volumes:
         - name: config-volume
           configMap:
