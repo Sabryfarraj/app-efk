@@ -12,7 +12,7 @@ spec:
     - host: backend.log
       http:
         paths:
-          - path: /secondary
+          - path: /sec-logger
             pathType: Prefix
             backend:
               service:
