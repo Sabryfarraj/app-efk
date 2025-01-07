@@ -1,0 +1,21 @@
+# main-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-logger-ingress
+  namespace: app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+    - host: backend.log
+      http:
+        paths:
+          - path: /main
+            pathType: Prefix
+            backend:
+              service:
+                name: main-logger
+                port:
+                  number: 8022
