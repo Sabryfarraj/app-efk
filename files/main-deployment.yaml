@@ -26,7 +26,7 @@ spec:
             - name: SPRING_CONFIG_LOCATION
               value: file:/config/application.yaml
             - name: SECONDARY_SERVICE_HOST
-              value: secondary-service
+              value: http://secondary-service
       volumes:
         - name: config-volume
           configMap:
