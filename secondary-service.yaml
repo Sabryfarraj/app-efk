@@ -1,0 +1,13 @@
+# secondary-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: secondary-service
+  namespace: app
+spec:
+  selector:
+    app: secondary-service
+  ports:
+    - port: 8033
+      targetPort: 8033
+  type: ClusterIP

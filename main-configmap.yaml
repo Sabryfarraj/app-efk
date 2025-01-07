@@ -1,0 +1,25 @@
+# main-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: main-logger-config
+  namespace: app
+data:
+  application.yaml: |
+    server:
+      port: 8022
+    spring:
+      application:
+        name: main-logger
+    logging:
+      level:
+        com:
+          mainlogger:
+            service: DEBUG
+      pattern:
+        level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"
+    external:
+      service:
+        host: secondary-service
+        username: user
+        password: password

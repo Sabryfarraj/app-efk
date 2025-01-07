@@ -1,0 +1,33 @@
+# main-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: main-logger
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: main-logger
+  template:
+    metadata:
+      labels:
+        app: main-logger
+    spec:
+      containers:
+        - name: main-logger
+          image: samiyounis01/mainloggerservice:v1.1
+          ports:
+            - containerPort: 8022
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+          env:
+            - name: SPRING_CONFIG_LOCATION
+              value: file:/config/application.yaml
+            - name: SECONDARY_SERVICE_HOST
+              value: secondary-service
+      volumes:
+        - name: config-volume
+          configMap:
+            name: main-logger-config

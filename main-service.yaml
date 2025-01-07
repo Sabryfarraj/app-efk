@@ -1,0 +1,13 @@
+# main-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-logger
+  namespace: app
+spec:
+  selector:
+    app: main-logger
+  ports:
+    - port: 8022
+      targetPort: 8022
+  type: ClusterIP

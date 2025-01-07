@@ -1,0 +1,31 @@
+# secondary-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secondary-service
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secondary-service
+  template:
+    metadata:
+      labels:
+        app: secondary-service
+    spec:
+      containers:
+        - name: secondary-service
+          image: samiyounis01/secondaryservice:v1.0
+          ports:
+            - containerPort: 8033
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+          env:
+            - name: SPRING_CONFIG_LOCATION
+              value: file:/config/application.yaml
+      volumes:
+        - name: config-volume
+          configMap:
+            name: secondary-service-config
