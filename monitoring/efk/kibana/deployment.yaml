@@ -1,0 +1,58 @@
+# monitoring/efk/kibana/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8sw2
+      containers:
+        - name: kibana
+          image: docker.elastic.co/kibana/kibana:8.11.3
+          resources:
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+          ports:
+            - containerPort: 5601
+              name: http
+          env:
+            - name: SERVER_HOST
+              value: "0.0.0.0"
+            - name: ELASTICSEARCH_HOSTS
+              value: "http://elasticsearch.monitoring.svc.cluster.local:9200"
+            - name: XPACK_SECURITY_ENABLED
+              value: "false"
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=3072 --max-semi-space-size=512"
+            - name: OPENSEARCH_LEGACY_PROVIDERS
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 5601
+            initialDelaySeconds: 180
+            timeoutSeconds: 10
+            periodSeconds: 30
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 5601
+            initialDelaySeconds: 180
+            timeoutSeconds: 10
+            periodSeconds: 30
+            failureThreshold: 6

@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: fluent-bit-config
+    namespace: monitoring
+data:
+    fluent-bit.conf: |
+        [SERVICE]
+            Flush         1
+            Log_Level    info
+            Daemon       off
+            HTTP_Server  On
+            HTTP_Listen  0.0.0.0
+            HTTP_Port    2020
+            Parsers_File parsers.conf
+            Storage.path /fluent-bit/storage/
+
+        [INPUT]
+            Name               tail
+            Path              /var/log/containers/*_app_*.log
+            Parser            docker
+            Tag               kube.*
+            Refresh_Interval  10
+            Mem_Buf_Limit    5MB
+            Skip_Long_Lines  On
+
+        [FILTER]
+            Name                kubernetes
+            Match               kube.*
+            Kube_URL           https://kubernetes.default.svc:443
+            Kube_CA_File       /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            Kube_Token_File    /var/run/secrets/kubernetes.io/serviceaccount/token
+            Merge_Log          On
+            Keep_Log           Off
+            K8S-Logging.Parser On
+
+        [FILTER]
+            Name    grep
+            Match   kube.*
+            Regex   $kubernetes['namespace_name'] ^app$
+
+        [FILTER]
+            Name    lua
+            Match   kube.*
+            Script  clean.lua
+            Call    clean_record
+
+        [OUTPUT]
+            Name            es
+            Match          kube.*
+            Host           elasticsearch.monitoring.svc.cluster.local
+            Port           9200
+            Index          app-logs
+            Generate_ID    On
+            Suppress_Type_Name On
+
+    parsers.conf: |
+        [PARSER]
+            Name         docker
+            Format       json
+            Time_Key     time
+            Time_Format  %Y-%m-%dT%H:%M:%S.%L
+            Time_Keep    On
+
+    clean.lua: |
+        function clean_record(tag, timestamp, record)
+            local new_record = {}
+            
+            -- Extract pod and app name
+            if record["kubernetes"] then
+                new_record["pod"] = record["kubernetes"]["pod_name"]
+                new_record["app"] = record["kubernetes"]["labels"]["app"]
+            end
+
+            -- Clean up log message
+            if record["log"] then
+                local log = record["log"]
+                -- Remove stdout/stderr markers
+                log = string.gsub(log, "^%s*[FP]%s*", "")
+                
+                -- Clean Spring Boot logs
+                if string.match(log, "%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d") then
+                    -- Extract the actual message after timestamp and log level
+                    local _, _, message = string.find(log, "%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d,%d%d%d%s+%w+%s+%[.-%]%s+.-:%s+(.*)")
+                    if message then
+                        log = message
+                    end
+                end
+                
+                -- Remove any remaining ANSI color codes
+                log = string.gsub(log, "\27%[[0-9;]*m", "")
+                
+                -- Remove any leading/trailing whitespace
+                log = string.gsub(log, "^%s*(.-)%s*$", "%1")
+                
+                new_record["message"] = log
+            end
+
+            -- Add timestamp
+            new_record["@timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S.000Z", timestamp)
+            
+            return 2, timestamp, new_record
+        end
